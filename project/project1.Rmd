@@ -1,0 +1,222 @@
+---
+title: 'Project 1: Exploratory Data Analysis'
+author: "Cabrina Becker"
+date: ''
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+  pdf_document:
+    toc: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F,
+tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
+```
+
+## Data Wrangling and Data Exploration
+
+
+### Introduction
+
+These datasets were taken from the Association of American Medical Colleges (AAMC) website, and contain data from medical schools in 2019. "appsandmats" is a dataset that contains information about U.S. medical school applications and matriculants by school, state of legal residence, and sex, 2019-2020. "raceeth" contains information about the total enrollment by U.S. medical school and race/ethnicity for the 2019-2020 year. These are interesting to me because I am in the process of interviewing for medical schools in Texas only, and it is cool to see data from schools that I have interviewed for but also around the US. I am expecting to see that schools with a lot of applicants will also have a lot of matriculants, and I am hoping to explore a new column later for acceptance rate to see if it matches with common conceptions of what schools are "good schools".
+
+    
+```{r}
+library(tidyverse)
+appsandmats <- read_csv("~/Project/appsandmats.csv",col_names = TRUE)
+raceeth <- read_csv("~/Project/raceeth.csv",col_names = TRUE)
+
+appsandmats <- appsandmats[,1:12]
+raceeth <- raceeth[-1,]
+
+raceeth
+
+```
+
+### Joining/Merging 
+
+There were 153 observations of 12 variables in the race and ethnicity dataset (raceeth), and 154 observations of 12 variables in the applications and matriculations dataset (appsandmats). Mayo is the only school included in raceeth that is not included in appandmats. Alabama and "Mayo-Alix" are in appsandmats but not raceeth. I did an inner join so that I would have no NAs, and it dropped those rows of data. The innerjoin data set has 152 observations of 23 variables.
+
+```{r}
+fulljoin <- appsandmats %>% full_join(raceeth, by=c("MedicalSchool"="Medical School"), na.rm=TRUE)
+fulljoin
+innerjoin <- appsandmats %>% inner_join(raceeth, by=c("MedicalSchool"="Medical School"), na.rm=TRUE)
+innerjoin
+
+intersect(raceeth$`Medical School`, appsandmats$MedicalSchool)
+setdiff(raceeth$`Medical School`, appsandmats$MedicalSchool)
+setdiff(appsandmats$MedicalSchool, raceeth$`Medical School`)
+```
+
+ After joining I looked at a few things out of curiosity about the schools in Texas, organizing them by matriuculatns and number of applications to see if it matches what I previously knew about these schools.
+    
+```{r}
+innerjoin <- innerjoin %>% select(-State.y)
+
+
+innerjoin %>% filter(State.x=="TX") %>%
+  arrange(desc("%matinstate"))
+
+innerjoin %>% filter(State.x=="TX") %>%
+  arrange(desc("Applications"))
+  
+```
+### Wrangling / Creating summary statistics
+
+I created a new column for acceptance rate, because I thought this info would be interesting to look at. I then eliminated two datasets because the enrollment was larger than the amount of applications, which doesn't make sense. This means we will lose a few points for later analysis, but I don't think it will make much of a difference. 
+Before doing summary statistics, I decided to make the ethnicities into percentages to be comparable to the appsandmats data by dividing the number of people by the total enrollment and then multiplying it by 100 so that it will make more sense when I do later analysis. 
+```{r}
+
+bigmeddata <- innerjoin %>% na.omit %>% mutate(acceptancerate = `Unduplicated
+Total 
+Enrollment`/ Applications)
+
+bigmeddata <- bigmeddata[-88,]
+bigmeddata <- bigmeddata[-70,]
+
+percmeddata <- bigmeddata %>% mutate(`American Indian 
+or Alaska Native`=`American Indian 
+or Alaska Native`/`Unduplicated
+Total 
+Enrollment`*100, Asian=Asian/`Unduplicated
+Total 
+Enrollment`*100, `Black or 
+African American`=`Black or 
+African American`/`Unduplicated
+Total 
+Enrollment`*100, `Hispanic, Latino, or 
+of Spanish Origin`=`Hispanic, Latino, or 
+of Spanish Origin`/`Unduplicated
+Total 
+Enrollment`*100, White=White/`Unduplicated
+Total 
+Enrollment`*100, Other=Other/`Unduplicated
+Total 
+Enrollment`*100, `Native Hawaiian or 
+Other Pacific Islander`= `Native Hawaiian or 
+Other Pacific Islander`/`Unduplicated
+Total 
+Enrollment`*100, `Non-U.S. Citizen and Non-Permanent Resident`=`Non-U.S. Citizen and Non-Permanent Resident`/`Unduplicated
+Total 
+Enrollment`*100, `Unknown  
+Race/Ethnicity`=`Unknown  
+Race/Ethnicity`/`Unduplicated
+Total 
+Enrollment`*100)
+
+percmeddata
+
+```
+
+Here I just looked at the data a little bit, looking at the mean number of applications, matriculants, gender percentages, and percentages of each ethnicity. I also looked at how many distinct schools and states there were; there are 45 distinct states and 149 schools that we will be using for the next analyses. For the summary statistics, I grouped by state to see averages, minimums, maximums, and standard deviations per state per variable. I first used pivot_longer to put all of the stats together, and then made it wider to separate each summary stat into it's own column for clarity. 
+    
+```{r}
+library(kableExtra)
+
+percmeddata %>% summarize_if(is.character, n_distinct)
+
+longdata <- percmeddata %>% select(-MedicalSchool) %>% group_by(State.x) %>% summarize_if(is.numeric, c(sd=sd, var=var, min=min, max=max, mean=mean))
+longdata
+
+longdata %>%pivot_longer(contains("_")) %>% 
+  separate(name,into=c("variable", "stat"), sep="_") %>%
+  pivot_wider(names_from = "stat", values_from = "value") %>% na.omit %>% kbl() %>%
+  kable_classic_2(full_width = F)
+
+```
+
+Here I made a correlation table that we will use to make some charts and analyze more. Because these variables are pretty independent, I wasn't expecting to see any shocking correlations. It is interesting to compare the ethnicities though, and that will be discussed a little more in the heatmap that is coming later.
+```{r}
+joincor <- percmeddata %>% column_to_rownames("MedicalSchool") %>% select_if(is.numeric)
+
+joincor
+library(kableExtra)
+
+cor(joincor) %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+cormeddata<- percmeddata %>% select_if(is.numeric) %>% cor(use="pair")
+cormeddata
+
+tidycor <- cormeddata %>% as.data.frame %>% rownames_to_column("var1") %>% pivot_longer(-1,"var2", values_to="correlation") 
+```
+
+ 
+### Visualizations
+
+####Correlation Heatmap
+This heatmap shows what variables are linked most strongly, and it is shown by color. Most of these correlations make sense, such as high amount of applications in state is correlated to high matriculation in state. However, some are more suprising, such as % of applicants that are women being corelated with high percentage of Black or African American students, or acceptance rate being correlated with high percentage of Hispanic, Latino, or Spanish origin.
+    
+```{R fig.width=15, fig.height=15}
+tidycor %>% ggplot(aes(var1,var2,fill=correlation)) + geom_tile() + scale_fill_gradient2(low="red",mid="white",high="blue")+ 
+theme(axis.text.x = element_text(size=12, angle = 90, hjust =1),
+      axis.text.y = element_text(size=12, angle=0),  axis.line = element_line(colour = "darkblue", 
+                      size = 1, linetype = "solid")) +
+  ggtitle("Correlation Heatmap")
+```
+
+#### Bar chart
+This graph is used to visualize what states get the most applicants. Being from Texas and knowing the reputation of medical schools, I was expecting the Texas and California schools to have the most applicants. However, it is clear by the graph that DC and Pennsylvania are the highest, and Texas and California fall somewhere more in the middle.
+
+```{r}
+percmeddata %>% ggplot(aes(State.x, Applications))+geom_bar(stat="summary", fill="steelblue")+ geom_errorbar(stat="summary",width=.5) + theme(axis.text.x = element_text(size=6, angle = 90, hjust =1)) + scale_fill_brewer(palette="Dark2") + ggtitle("Applications per State") + xlab("State") + ylab("Number of Applications (2019-2020)")
+```
+
+#### Scatterplot 
+This plot was made to look at the percentage of women applicants and the acceptance rate of the school, and it is colored by state. I was wondering if we would be able to see if women applied to "harder" (lower acceptance rate) schools. While most schools have about 50% women applicants, the schools that do have high percentage of women are at schools with low acceptance rates (upper left corner of graph), and I think that this is interesting.
+
+```{R fig.width=10, fig.height=15}
+
+test <- percmeddata %>% rename(percwomen=`%appwomen`) 
+ggplot(test, aes(x =acceptancerate,percwomen , color=State.x))+geom_point() + theme(legend.position = "bottom") + xlab("Acceptance Rate") + ylab("% Women applicants") + ggtitle("Women and Acceptance Rates") + scale_x_continuous("Acceptance Rate", breaks=c(.1,.2, .3, .4,.5, .6,.7))
+```
+
+### PCA
+Using princomp, I found the components associated with my numeric variables. The first two have the highest proportions of variance, so I mainly analyzed those two variables. It looks like for medical schools that are high in PC1, they have a low acceptance rate, low percentage of students that are Hispanic, Latino, or Spanish Origin, high out of state applicants and matriculants, and high Non-U.S. Citizen and Non-Permanent Resident students. For medical schools that are high in PC2, they have high in state, low percentage of White students, low acceptance rates, and high percentage of women matriculants.
+    
+```{r}
+
+med1 <- percmeddata %>% select(-1)
+med_nums <- med1 %>%select_if(is.numeric) %>% scale
+rownames(med_nums) <- med1$MedicalSchool
+med_pca <- princomp(med_nums)
+names(med_pca)
+
+summary(med_pca, loadings=T)
+```
+I made this plot just to get a visual of how the points were interacting. Because they amount of variance contributed by both of them is somewhat low, around 30%, I didn't expect to see any major trends here.
+```{r}
+eigval <-  med_pca$sdev^2 
+varprop=round(eigval/sum(eigval), 2) 
+
+med_nums %>% cor %>% eigen %>% .$vector %>% round(3)
+
+eigen(cor(med_nums))
+
+meddf <-  data.frame(PC1=med_pca$scores[, 1], PC2=med_pca$scores[, 2])
+
+
+ggplot(meddf, aes(PC1, PC2)) + geom_point()+ ggtitle("Principal Component 2 vs. 1")
+
+```
+I found this plot extremely interesting and fun to look at. While the percentage of variance per component is somewhat low, we can still see some clear trends. For example, the line showing the percentage of Black or African American students is clearly pointed to Morehouse, Meharry, and Howard, which makes sense as they are Historically Black medical schools. Opposite that arrow we see schools in the midwest such as the Dakotas, Kansas, Tennessee, and the arrow for percentage of White students.Near the "%appinstate" arrow, I see most of the Texas and California schools, which is agrees with my mindset about schools because people in these states have access to good schools with in-state tuition.
+
+```{r}
+library(factoextra)
+fviz_pca_biplot(med_pca)
+
+```
+
+<P style="page-break-before: always">
+\newpage
+    
+...
+
+
+
+
+

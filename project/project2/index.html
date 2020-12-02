@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Cabrina Becker" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../img/favicon.ico">
+    <title>Project 2</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../../post/">BLOG</a></li>
+        
+        <li><a href="../../projects/">PROJECTS</a></li>
+        
+        <li><a href="../../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../../project/project2/">Project 2</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         January 1, 0001 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="modeling-testing-and-predicting" class="section level2">
+<h2>Modeling, Testing, and Predicting</h2>
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>I am going to be using the aSAH dataset, which summarizes several clinical and one laboratory variable of 113 patients with an aneurysmal subarachnoid hemorrhage The variables are defined as: NDKA:Nucleoside diphosphate kinase A wfn: World Federation of Neurological Surgeons, uses the Glasgow Coma Scale and presence of focal neurological deficits to grade the clinical severity of subarachnoid hemorrhage. grade 1: GCS 15, no motor deficit. grade 2: GCS 13-14 without deficit grade 3: GCS 13-14 with focal neurological deficit grade 4: GCS 7-12, with or without deficit. grade 5: GCS &lt;7 , with or without deficit. s100b: S100 calcium-binding protein B (S100B) gos6: Glasgow Outcome Score GOS score 1–3= unfavorable, favorable outcome= GOS score 4–5</p>
+<pre class="r"><code>library(pROC)</code></pre>
+<pre><code>## Type &#39;citation(&quot;pROC&quot;)&#39; for a citation.</code></pre>
+<pre><code>## 
+## Attaching package: &#39;pROC&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     cov, smooth, var</code></pre>
+<pre class="r"><code>data(aSAH)
+head(aSAH)</code></pre>
+<pre><code>##    gos6 outcome gender age wfns s100b  ndka
+## 29    5    Good Female  42    1  0.13  3.01
+## 30    5    Good Female  37    1  0.14  8.54
+## 31    5    Good Female  42    1  0.10  8.09
+## 32    5    Good Female  27    1  0.04 10.42
+## 33    1    Poor Female  42    3  0.13 17.40
+## 34    1    Poor   Male  48    2  0.10 12.75</code></pre>
+</div>
+<div id="manova" class="section level3">
+<h3>MANOVA</h3>
+<pre class="r"><code>library(rstatix)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;rstatix&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:stats&#39;:
+## 
+##     filter</code></pre>
+<pre class="r"><code>man1&lt;-manova(cbind(ndka,s100b,age)~outcome, data=aSAH)
+summary(man1)</code></pre>
+<pre><code>##            Df  Pillai approx F num Df den Df    Pr(&gt;F)    
+## outcome     1 0.19712   8.9205      3    109 2.452e-05 ***
+## Residuals 111                                             
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>summary.aov(man1)</code></pre>
+<pre><code>##  Response ndka :
+##              Df Sum Sq Mean Sq F value  Pr(&gt;F)  
+## outcome       1   4573  4573.1  2.8748 0.09278 .
+## Residuals   111 176571  1590.7                  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response s100b :
+##              Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+## outcome       1 1.4494 1.44940  23.498 4.094e-06 ***
+## Residuals   111 6.8466 0.06168                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response age :
+##              Df  Sum Sq Mean Sq F value  Pr(&gt;F)  
+## outcome       1   955.7  955.71  5.1521 0.02515 *
+## Residuals   111 20590.2  185.50                  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p><em>A one-way MANOVA was conducted to determine the effect of the Outcome (Good, Poor) on two dependent variables (ndka,s10b, and age). Significant differences were found among the two outcomes for at least one of the dependent variables. Univariate ANOVAs for each dependent variable were conducted as follow-up tests to the MANOVA, using the Bonferroni method for controlling Type I error rates for multiple comparisons. The univariate ANOVAs for s100b and age were also significant, 0.000004 , and, 0.0251, respectively.</em></p>
+<pre class="r"><code>library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>aSAH%&gt;%group_by(outcome)%&gt;%summarize(mean(s100b),mean(age))</code></pre>
+<pre><code>## `summarise()` ungrouping output (override with `.groups` argument)</code></pre>
+<pre><code>## # A tibble: 2 x 3
+##   outcome `mean(s100b)` `mean(age)`
+##   &lt;fct&gt;           &lt;dbl&gt;       &lt;dbl&gt;
+## 1 Good            0.162        48.9
+## 2 Poor            0.397        55.0</code></pre>
+<pre class="r"><code>pairwise.t.test(aSAH$s100b,aSAH$outcome, p.adj=&quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  aSAH$s100b and aSAH$outcome 
+## 
+##      Good   
+## Poor 4.1e-06
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(aSAH$age,aSAH$outcome, p.adj=&quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  aSAH$age and aSAH$outcome 
+## 
+##      Good 
+## Poor 0.025
+## 
+## P value adjustment method: none</code></pre>
+<p><em>According to the Post-Hoc t-tests, good is significantly different from poor for both s100b and age. Because these are the only two groups, it is fairly easy to interpret. Since we did a MANOVA, three ANOVAs, and two t-tests, we should be looking at the α = .05/6= .0083 level, which is the probability of making a Type I error. With the correction, the only one that is siginifant is s100b.</em></p>
+<pre class="r"><code>library(rstatix)
+group &lt;- aSAH$outcome
+DVs &lt;- aSAH %&gt;% select(s100b,age)
+
+sapply(split(DVs,group), mshapiro_test)</code></pre>
+<pre><code>##           Good         Poor        
+## statistic 0.9080124    0.7842794   
+## p.value   6.506192e-05 2.592936e-06</code></pre>
+<p><em>Testing the multivariate normality assumption for MANOVA, this does not meet the assumption for a MANOVA test.</em></p>
+</div>
+<div id="randomization" class="section level3">
+<h3>Randomization</h3>
+<p>Using a mean difference test, the hypotheses would be: Ho: The mean s100b is the same for good and poor outcomes Ha: The mean s100b is the different for good and poor outcomes</p>
+<pre class="r"><code>library(ggplot2)
+
+ggplot(aSAH,aes(s100b,fill=outcome))+geom_histogram(bins=6.5)+
+facet_wrap(~outcome,ncol=2)+theme(legend.position=&quot;none&quot;)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<pre class="r"><code>aSAH %&gt;% 
+  group_by(outcome)%&gt;%
+  summarize(means=mean(s100b))%&gt;%summarize(`mean_diff`=diff(means))</code></pre>
+<pre><code>## `summarise()` ungrouping output (override with `.groups` argument)</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##   mean_diff
+##       &lt;dbl&gt;
+## 1     0.236</code></pre>
+<pre class="r"><code>rand_dist&lt;-vector() 
+
+for(i in 1:5000){
+new&lt;-data.frame(s100b=sample(aSAH$s100b),outcome=aSAH$outcome)
+rand_dist[i]&lt;-mean(new[new$outcome==&quot;Good&quot;,]$s100b)-   
+              mean(new[new$outcome==&quot;Poor&quot;,]$s100b)} 
+
+{hist(rand_dist,main=&quot;&quot;,ylab=&quot;&quot;); abline(v = c(-0.2355, 0.2355),col=&quot;red&quot;)}</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-4-2.png" width="672" /></p>
+<pre class="r"><code>mean(rand_dist&gt;0.2355| rand_dist &lt; -0.2355) </code></pre>
+<pre><code>## [1] 0</code></pre>
+<pre class="r"><code>t.test(data=aSAH,s100b~outcome)</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  s100b by outcome
+## t = -3.8875, df = 45.61, p-value = 0.0003261
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -0.3575368 -0.1135540
+## sample estimates:
+## mean in group Good mean in group Poor 
+##          0.1615278          0.3970732</code></pre>
+<p><em>Using a mean difference test and comparing it to a t.test, we can conclude that the difference in means of s100b is different between the Good and Poor outcomes. According to the mean difference test, the probability of getting a mean difference as extreme as the one we got if there was truly no difference between them is virtually 0.</em></p>
+</div>
+<div id="linear-regression-model" class="section level3">
+<h3>Linear Regression Model</h3>
+<pre class="r"><code>aSAH$s100b_c&lt;-aSAH$s100b-mean(aSAH$s100b)
+aSAH$age_c&lt;-aSAH$age-mean(aSAH$age)
+aSAH$ndka_c &lt;-aSAH$ndka-mean(aSAH$ndka)
+
+aSAH$outcome &lt;- as.character(aSAH$outcome)
+aSAH$gender &lt;- as.character(aSAH$gender)
+aSAH$gos6 &lt;- as.numeric(aSAH$gos6)
+aSAH$wfns &lt;- as.numeric(aSAH$gos6)
+
+fit &lt;-lm(gos6 ~ gender * s100b_c, data=aSAH)
+summary(fit)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = gos6 ~ gender * s100b_c, data = aSAH)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -3.5076 -0.8637  0.6257  1.1515  2.4879 
+## 
+## Coefficients:
+##                    Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)          4.0258     0.1813  22.209  &lt; 2e-16 ***
+## genderMale          -0.8060     0.2973  -2.711 0.007801 ** 
+## s100b_c             -2.2203     0.6233  -3.562 0.000547 ***
+## genderMale:s100b_c  -0.8170     1.1860  -0.689 0.492355    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.527 on 109 degrees of freedom
+## Multiple R-squared:  0.2115, Adjusted R-squared:  0.1898 
+## F-statistic: 9.748 on 3 and 109 DF,  p-value: 9.438e-06</code></pre>
+<p><em>Predicted gos6 for females with average s100b is 4.02, which corresponds to a favorable outcome. Males with average s100b have predicted gos6 that is .806 lower than females. For every 1-unit increase in s100b, predicted gos6 goes down 2.22. Slope of s100b for males is .605 less than for women.</em></p>
+<pre class="r"><code>aSAH %&gt;% ggplot(aes(s100b, gos6, color = gender)) + geom_point() + geom_smooth(method = &quot;lm&quot;, se = FALSE, fullrange = TRUE) + geom_vline(xintercept = mean(aSAH$s100b), lty=2)</code></pre>
+<pre><code>## `geom_smooth()` using formula &#39;y ~ x&#39;</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre class="r"><code>library(sandwich); library(lmtest)</code></pre>
+<pre><code>## Loading required package: zoo</code></pre>
+<pre><code>## 
+## Attaching package: &#39;zoo&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     as.Date, as.Date.numeric</code></pre>
+<pre class="r"><code>resids&lt;- fit$residuals
+fitvals&lt;-fit$fitted.values
+ggplot()+geom_point(aes(fitvals,resids))+geom_hline(yintercept=0, col=&quot;red&quot;)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-7-1.png" width="672" /> <em>Heteroskedasticity and linearity seem to be violated based on the trend of the graph</em></p>
+<pre class="r"><code>ggplot()+geom_histogram(aes(resids),bins=20)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p><em>The residuals are not normally distributed.</em></p>
+<p>Robust SE</p>
+<pre class="r"><code>coeftest(fit, vcov = vcovHC(fit))</code></pre>
+<pre><code>## 
+## t test of coefficients:
+## 
+##                    Estimate Std. Error t value  Pr(&gt;|t|)    
+## (Intercept)         4.02578    0.16948 23.7541 &lt; 2.2e-16 ***
+## genderMale         -0.80597    0.32156 -2.5064  0.013673 *  
+## s100b_c            -2.22030    0.81418 -2.7270  0.007449 ** 
+## genderMale:s100b_c -0.81704    1.41038 -0.5793  0.563578    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p><em>Predicted gos6 for females with average s100b is 4.02, which corresponds to a favorable outcome. Males with average s100b have predicted gos6 that is .805 lower than females, and this effect is significant. For every 1-unit increase in s100b, predicted gos6 goes down 2.22, this effect is also significant. Slope of s100b for males is .605 less than for women. This model explains 0.2115 of the variation in the outcome.</em></p>
+</div>
+<div id="bootstrapped-standard-errors" class="section level3">
+<h3>Bootstrapped Standard Errors</h3>
+<pre class="r"><code>resid_resamp&lt;-replicate(5000,{
+    new_resids&lt;-sample(resids,replace=TRUE) #resample resids w/ replacement
+    aSAH$new_y&lt;-fitvals+new_resids #add new resids to yhats to get new &quot;data&quot;
+    newfit&lt;-lm(new_y~gender+s100b_c,data=aSAH) #refit model
+    coef(newfit) #save coefficient estimates (b0, b1, etc)
+}) 
+
+resid_resamp%&gt;%t%&gt;%as.data.frame%&gt;%summarize_all(sd)</code></pre>
+<pre><code>##   (Intercept) genderMale  s100b_c
+## 1   0.1772753   0.289161 0.520779</code></pre>
+<p><em>The standard error for Male is not changed very much, however the for s100b, it changes from .6233 to .52177.</em></p>
+</div>
+<div id="logistic-regression-model" class="section level3">
+<h3>Logistic Regression Model</h3>
+<pre class="r"><code>glmdat&lt;-aSAH%&gt;%mutate(y=ifelse(outcome==&quot;Poor&quot;,1,0))
+head(glmdat)</code></pre>
+<pre><code>##   gos6 outcome gender age wfns s100b  ndka    s100b_c      age_c     ndka_c y
+## 1    5    Good Female  42    5  0.13  3.01 -0.1169912  -9.097345 -16.649027 0
+## 2    5    Good Female  37    5  0.14  8.54 -0.1069912 -14.097345 -11.119027 0
+## 3    5    Good Female  42    5  0.10  8.09 -0.1469912  -9.097345 -11.569027 0
+## 4    5    Good Female  27    5  0.04 10.42 -0.2069912 -24.097345  -9.239027 0
+## 5    1    Poor Female  42    1  0.13 17.40 -0.1169912  -9.097345  -2.259027 1
+## 6    1    Poor   Male  48    1  0.10 12.75 -0.1469912  -3.097345  -6.909027 1</code></pre>
+<pre class="r"><code>glmfit&lt;-glm(y~ndka_c+ s100b_c, data=glmdat, family=&quot;binomial&quot;(link=&quot;logit&quot;))
+coeftest(glmfit)</code></pre>
+<pre><code>## 
+## z test of coefficients:
+## 
+##              Estimate Std. Error z value  Pr(&gt;|z|)    
+## (Intercept) -0.446520   0.230006 -1.9413   0.05222 .  
+## ndka_c       0.031263   0.016124  1.9389   0.05251 .  
+## s100b_c      5.334062   1.262617  4.2246 2.394e-05 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>exp(coef(glmfit))</code></pre>
+<pre><code>## (Intercept)      ndka_c     s100b_c 
+##    0.639851    1.031757  207.278268</code></pre>
+<p><em>Every one-unit increase in ndka multiplies odds of a poor outcome by 1.03. For every one-unit increase in s100b, odds of a poor outcome increase by 207.278.</em></p>
+<pre class="r"><code>glmdat$prob &lt;- predict(glmfit,type=&quot;response&quot;)
+
+glmdat$predicted &lt;- ifelse(glmdat$prob&gt;.5,&quot;Poor&quot;,&quot;Good&quot;)
+
+table(truth=glmdat$outcome, prediction=glmdat$predicted)%&gt;%addmargins</code></pre>
+<pre><code>##       prediction
+## truth  Good Poor Sum
+##   Good   63    9  72
+##   Poor   22   19  41
+##   Sum    85   28 113</code></pre>
+<pre class="r"><code>#Accuracy
+(63+19)/113</code></pre>
+<pre><code>## [1] 0.7256637</code></pre>
+<pre class="r"><code>#Sensitivity/TPR
+63/72</code></pre>
+<pre><code>## [1] 0.875</code></pre>
+<pre class="r"><code>#Specificity
+19/41</code></pre>
+<pre><code>## [1] 0.4634146</code></pre>
+<pre class="r"><code>#Precision
+63/85</code></pre>
+<pre><code>## [1] 0.7411765</code></pre>
+<pre class="r"><code>library(plotROC)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;plotROC&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:pROC&#39;:
+## 
+##     ggroc</code></pre>
+<pre class="r"><code>ROCplot&lt;-ggplot(glmdat)+geom_roc(aes(d=y,m=prob), n.cuts=0) 
+calc_auc(ROCplot)</code></pre>
+<pre><code>##   PANEL group       AUC
+## 1     1    -1 0.7818428</code></pre>
+<pre class="r"><code>ggplot(glmdat,aes(s100b_c,y))+geom_point(aes(color=predicted))+
+geom_smooth(method=&quot;glm&quot;,method.args=list(family=&quot;binomial&quot;),se=F)</code></pre>
+<pre><code>## `geom_smooth()` using formula &#39;y ~ x&#39;</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-13-1.png" width="672" /> <em>The accuracy is equal to .7256, meaning that .73 is the proportion of correclty classified outcomes. The sensitivity is .875, which is the proportion of good outcomes that were correctly classified. The Specificity is .4634, which is th proportion of poor outcomes correctly classified. Precision is .7411 which is the proportion classified as good that actually are. The AUC is .78, which is not too bad, but could be better.</em></p>
+<p>Density Plot</p>
+<pre class="r"><code>glmdat$logit&lt;-predict(glmfit)
+glmdat %&gt;% mutate(outcome=factor(outcome,levels=c(&quot;Good&quot;,&quot;Poor&quot;))) %&gt;% ggplot(aes(logit, fill=outcome))+geom_density(alpha=.3)+
+  geom_vline(xintercept=0,lty=4)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<p>ROC Plot</p>
+<pre class="r"><code>ROCplot</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+</div>
+<div id="logistic-regression-2" class="section level3">
+<h3>Logistic Regression 2</h3>
+<p>Here, I did not use all variables because gos6 and wfns are basically the same as outcome.</p>
+<pre class="r"><code>glmfit2&lt;-glm(y~ndka_c + s100b_c+ gender+age_c, data=glmdat, family=&quot;binomial&quot;(link=&quot;logit&quot;))
+coeftest(glmfit2)</code></pre>
+<pre><code>## 
+## z test of coefficients:
+## 
+##              Estimate Std. Error z value  Pr(&gt;|z|)    
+## (Intercept) -0.918331   0.322977 -2.8433  0.004464 ** 
+## ndka_c       0.029038   0.016791  1.7294  0.083739 .  
+## s100b_c      4.995516   1.275759  3.9157 9.013e-05 ***
+## genderMale   1.102487   0.504924  2.1835  0.029001 *  
+## age_c        0.033498   0.018264  1.8342  0.066631 .  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>exp(coef(glmfit2))</code></pre>
+<pre><code>## (Intercept)      ndka_c     s100b_c  genderMale       age_c 
+##   0.3991848   1.0294632 147.7491213   3.0116476   1.0340657</code></pre>
+<pre class="r"><code>glmdat$prob2 &lt;- predict(glmfit2,type=&quot;response&quot;)
+
+glmdat$predicted2 &lt;- ifelse(glmdat$prob2&gt;.5,&quot;Poor&quot;,&quot;Good&quot;)
+
+table(truth=glmdat$outcome, prediction=glmdat$predicted2)%&gt;%addmargins</code></pre>
+<pre><code>##       prediction
+## truth  Good Poor Sum
+##   Good   63    9  72
+##   Poor   19   22  41
+##   Sum    82   31 113</code></pre>
+<pre class="r"><code>#Accuracy
+(63+22)/113</code></pre>
+<pre><code>## [1] 0.7522124</code></pre>
+<pre class="r"><code>#Sensitivity/TPR
+63/72</code></pre>
+<pre><code>## [1] 0.875</code></pre>
+<pre class="r"><code>#Specificity
+22/41</code></pre>
+<pre><code>## [1] 0.5365854</code></pre>
+<pre class="r"><code>#Precision
+63/82</code></pre>
+<pre><code>## [1] 0.7682927</code></pre>
+<pre class="r"><code>library(plotROC)
+ROCplot2&lt;-ggplot(glmdat)+geom_roc(aes(d=y,m=prob2), n.cuts=0) 
+calc_auc(ROCplot2)</code></pre>
+<pre><code>##   PANEL group       AUC
+## 1     1    -1 0.8096206</code></pre>
+<p><em>The accuracy is equal to .7522, meaning that .75 is the proportion of correctly classified outcomes. The sensitivity is .875, which is the proportion of good outcomes that were correctly classified. The Specificity is .5365, which is the proportion of poor outcomes correctly classified. Precision is .7683 which is the proportion classified as good that actually are. The AUC is .801, which is slightly better than the last one.</em></p>
+<pre class="r"><code>class_diag &lt;- function(probs,truth){
+  #CONFUSION MATRIX: CALCULATE ACCURACY, TPR, TNR, PPV
+  tab&lt;-table(factor(probs&gt;.5,levels=c(&quot;FALSE&quot;,&quot;TRUE&quot;)),truth)
+  acc=sum(diag(tab))/sum(tab)
+  sens=tab[2,2]/colSums(tab)[2]
+  spec=tab[1,1]/colSums(tab)[1]
+  ppv=tab[2,2]/rowSums(tab)[2]
+  f1=2*(sens*ppv)/(sens+ppv)
+
+  if(is.numeric(truth)==FALSE &amp; is.logical(truth)==FALSE) truth&lt;-as.numeric(truth)-1
+  
+  #CALCULATE EXACT AUC
+  ord&lt;-order(probs, decreasing=TRUE)
+  probs &lt;- probs[ord]; truth &lt;- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth)) 
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup&lt;-c(probs[-1]&gt;=probs[-length(probs)], FALSE)
+  TPR&lt;-c(0,TPR[!dup],1); FPR&lt;-c(0,FPR[!dup],1)
+  n &lt;- length(TPR)
+  auc&lt;- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+
+  data.frame(acc,sens,spec,ppv,f1,auc)
+}
+
+
+set.seed(1234)
+k=10 
+data&lt;-glmdat[sample(nrow(glmdat)),] 
+folds&lt;-cut(seq(1:nrow(glmdat)),breaks=k,labels=F) 
+diags&lt;-NULL
+for(i in 1:k){
+train&lt;-data[folds!=i,]
+test&lt;-data[folds==i,]
+truth&lt;-test$y
+fit6&lt;-glm(y~ndka_c + s100b_c+ gender+age_c, data=glmdat,family=&quot;binomial&quot;)
+probs&lt;-predict(fit6,newdata = test,type=&quot;response&quot;)
+diags&lt;-rbind(diags,class_diag(probs,truth))
+}
+summarize_all(diags,mean)</code></pre>
+<pre><code>##    acc      sens      spec       ppv       f1       auc
+## 1 0.75 0.5283333 0.8704365 0.7297619 0.564304 0.7909921</code></pre>
+<p><em>The AUC has gone down a tiny bit, but it is still similar</em> Lasso</p>
+<pre class="r"><code>library(glmnet)</code></pre>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## Loaded glmnet 4.0-2</code></pre>
+<pre class="r"><code>y&lt;-as.matrix(glmdat$y) #grab response
+x&lt;-model.matrix(y~ndka_c + s100b_c+ gender+age_c,data=glmdat)[,-1] 
+head(x)</code></pre>
+<pre><code>##       ndka_c    s100b_c genderMale      age_c
+## 1 -16.649027 -0.1169912          0  -9.097345
+## 2 -11.119027 -0.1069912          0 -14.097345
+## 3 -11.569027 -0.1469912          0  -9.097345
+## 4  -9.239027 -0.2069912          0 -24.097345
+## 5  -2.259027 -0.1169912          0  -9.097345
+## 6  -6.909027 -0.1469912          1  -3.097345</code></pre>
+<pre class="r"><code>x&lt;-scale(x)
+
+cv&lt;-cv.glmnet(x,y,family=&quot;binomial&quot;)
+lasso&lt;-glmnet(x,y,family=&quot;binomial&quot;,lambda=cv$lambda.1se)
+coef(lasso)</code></pre>
+<pre><code>## 5 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                     s0
+## (Intercept) -0.5703334
+## ndka_c       .        
+## s100b_c      0.4472599
+## genderMale   .        
+## age_c        .</code></pre>
+<p><em>only the variable s100b is retained, but this makes sense because we have seen it having the highest effect on odds and on slope in the past few models</em></p>
+<pre class="r"><code>set.seed(1234)
+k=10
+data7 &lt;- glmdat %&gt;% sample_frac #put rows of dataset in random order
+folds &lt;- ntile(1:nrow(glmdat),n=10) #create fold labels
+diags&lt;-NULL
+for(i in 1:k){
+train &lt;- data7[folds!=i,] #create training set (all but fold i)
+test &lt;- data7[folds==i,] #create test set (just fold i)
+truth &lt;- test$y #save truth labels from fold i
+fit7 &lt;- glm(y~s100b_c,
+data=train, family=&quot;binomial&quot;)
+probs &lt;- predict(fit7, newdata=test, type=&quot;response&quot;)
+diags&lt;-rbind(diags,class_diag(probs,truth))
+}
+diags%&gt;%summarize_all(mean)</code></pre>
+<pre><code>##         acc      sens      spec       ppv        f1       auc
+## 1 0.7075758 0.4233333 0.8842857 0.6983333 0.4818254 0.7507143</code></pre>
+<p><em>The AUC has gone down a little, but not a ton.</em></p>
+</div>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../../js/docs.min.js"></script>
+<script src="../../js/main.js"></script>
+
+<script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

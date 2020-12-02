@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Projects on Chris Turner</title>
+    <link>/project/</link>
+    <description>Recent content in Projects on Chris Turner</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language><atom:link href="/project/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Project 1: Exploratory Data Analysis</title>
+      <link>/project/project1/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/project/project1/</guid>
+      <description>Data Wrangling and Data Exploration Introduction These datasets were taken from the Association of American Medical Colleges (AAMC) website, and contain data from medical schools in 2019. &amp;quot;appsandmats&amp;quot; is a dataset that contains information about U.S. medical school applications and matriculants by school, state of legal residence, and sex, 2019-2020. &amp;quot;raceeth&amp;quot; contains information about the total enrollment by U.S. medical school and race/ethnicity for the 2019-2020 year. These are interesting to me because I am in the process of interviewing for medical schools in Texas only, and it is cool to see data from schools that I have interviewed for but also around the US.</description>
+    </item>
+    
+    <item>
+      <title>Project 2</title>
+      <link>/project/project2/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/project/project2/</guid>
+      <description>Modeling, Testing, and Predicting Introduction I am going to be using the aSAH dataset, which summarizes several clinical and one laboratory variable of 113 patients with an aneurysmal subarachnoid hemorrhage The variables are defined as: NDKA:Nucleoside diphosphate kinase A wfn: World Federation of Neurological Surgeons, uses the Glasgow Coma Scale and presence of focal neurological deficits to grade the clinical severity of subarachnoid hemorrhage. grade 1: GCS 15, no motor deficit.</description>
+    </item>
+    
+  </channel>
+</rss>

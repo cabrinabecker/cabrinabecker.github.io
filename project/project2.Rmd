@@ -1,0 +1,326 @@
+---
+title: "Project 2"
+author: "Cabrina Becker"
+date: '11/22/2020'
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+  pdf_document:
+    toc: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Modeling, Testing, and Predicting
+
+### Introduction
+
+I am going to be using the aSAH dataset, which summarizes several clinical and one laboratory variable of 113 patients with an aneurysmal subarachnoid hemorrhage The variables are defined as:
+NDKA:Nucleoside diphosphate kinase A
+wfn: World Federation of Neurological Surgeons, uses the Glasgow Coma Scale and presence of focal neurological deficits to grade the clinical severity of subarachnoid hemorrhage.
+  grade 1: GCS 15, no motor deficit.
+  grade 2: GCS 13-14 without deficit
+  grade 3: GCS 13-14 with focal neurological deficit
+  grade 4: GCS 7-12, with or without deficit.
+  grade 5: GCS <7 , with or without deficit.
+s100b: S100 calcium-binding protein B (S100B)
+gos6:  Glasgow Outcome Score 
+  GOS score 1–3= unfavorable, favorable outcome= GOS score 4–5
+
+```{r cars}
+library(pROC)
+
+data(aSAH)
+head(aSAH)
+```
+
+### MANOVA
+```{r}
+library(rstatix)
+
+man1<-manova(cbind(ndka,s100b,age)~outcome, data=aSAH)
+summary(man1)
+summary.aov(man1)
+
+```
+
+*A one-way MANOVA was conducted to determine the effect of the Outcome (Good, Poor) on two dependent variables (ndka,s10b, and age). Significant differences were found among the two outcomes for at least one of the dependent variables. Univariate ANOVAs for each dependent variable were conducted as follow-up tests to the MANOVA, using the Bonferroni method for controlling Type I error rates for multiple comparisons. The univariate ANOVAs for s100b and age were also significant, 0.000004 , and, 0.0251, respectively.*
+
+```{r}
+library(dplyr)
+aSAH%>%group_by(outcome)%>%summarize(mean(s100b),mean(age))
+pairwise.t.test(aSAH$s100b,aSAH$outcome, p.adj="none")
+pairwise.t.test(aSAH$age,aSAH$outcome, p.adj="none")
+```
+*According to the Post-Hoc t-tests, good is significantly different from poor for both s100b and age. Because these are the only two groups, it is fairly easy to interpret. Since we did a MANOVA, three ANOVAs, and two t-tests, we should be looking at the α = .05/6= .0083 level, which is the probability of making a Type I error. With the correction, the only one that is siginifant is s100b.*
+
+
+```{r}
+library(rstatix)
+group <- aSAH$outcome
+DVs <- aSAH %>% select(s100b,age)
+
+sapply(split(DVs,group), mshapiro_test)
+
+```
+
+*Testing the multivariate normality assumption for MANOVA, this does not meet the assumption for a MANOVA test.*
+
+###Randomization
+Using a mean difference test, the hypotheses would be:
+Ho: The mean s100b is the same for good and poor outcomes
+Ha: The mean s100b is the different for good and poor outcomes
+```{r}
+library(ggplot2)
+
+ggplot(aSAH,aes(s100b,fill=outcome))+geom_histogram(bins=6.5)+
+facet_wrap(~outcome,ncol=2)+theme(legend.position="none")
+
+aSAH %>% 
+  group_by(outcome)%>%
+  summarize(means=mean(s100b))%>%summarize(`mean_diff`=diff(means))
+
+rand_dist<-vector() 
+
+for(i in 1:5000){
+new<-data.frame(s100b=sample(aSAH$s100b),outcome=aSAH$outcome)
+rand_dist[i]<-mean(new[new$outcome=="Good",]$s100b)-   
+              mean(new[new$outcome=="Poor",]$s100b)} 
+
+{hist(rand_dist,main="",ylab=""); abline(v = c(-0.2355, 0.2355),col="red")}
+
+mean(rand_dist>0.2355| rand_dist < -0.2355) 
+
+t.test(data=aSAH,s100b~outcome)
+
+```
+*Using a mean difference test and comparing it to a t.test, we can conclude that the difference in means of s100b is different between the Good and Poor outcomes. According to the mean difference test, the probability of getting a mean difference as extreme as the one we got if there was truly no difference between them is virtually 0.*
+
+###Linear Regression Model
+
+```{r}
+aSAH$s100b_c<-aSAH$s100b-mean(aSAH$s100b)
+aSAH$age_c<-aSAH$age-mean(aSAH$age)
+aSAH$ndka_c <-aSAH$ndka-mean(aSAH$ndka)
+
+aSAH$outcome <- as.character(aSAH$outcome)
+aSAH$gender <- as.character(aSAH$gender)
+aSAH$gos6 <- as.numeric(aSAH$gos6)
+aSAH$wfns <- as.numeric(aSAH$gos6)
+
+fit <-lm(gos6 ~ gender * s100b_c, data=aSAH)
+summary(fit)
+
+```
+*Predicted gos6 for females with average s100b is 4.02, which corresponds to a favorable outcome. Males with average s100b have predicted gos6 that is .806 lower than females. For every 1-unit increase in s100b, predicted gos6 goes down 2.22. Slope of s100b for males is .605 less than for women.*
+
+```{r}
+aSAH %>% ggplot(aes(s100b, gos6, color = gender)) + geom_point() + geom_smooth(method = "lm", se = FALSE, fullrange = TRUE) + geom_vline(xintercept = mean(aSAH$s100b), lty=2)
+```
+
+
+```{r}
+library(sandwich); library(lmtest)
+resids<- fit$residuals
+fitvals<-fit$fitted.values
+ggplot()+geom_point(aes(fitvals,resids))+geom_hline(yintercept=0, col="red")
+```
+*Heteroskedasticity and linearity seem to be violated based on the trend of the graph*
+```{r}
+ggplot()+geom_histogram(aes(resids),bins=20)
+```
+
+*The residuals are not normally distributed.*
+
+Robust SE
+```{r}
+coeftest(fit, vcov = vcovHC(fit))
+```
+
+*Predicted gos6 for females with average s100b is 4.02, which corresponds to a favorable outcome. Males with average s100b have predicted gos6 that is .805 lower than females, and this effect is significant. For every 1-unit increase in s100b, predicted gos6 goes down 2.22, this effect is also significant. Slope of s100b for males is .605 less than for women. This model explains 0.2115 of the variation in the outcome.*
+
+
+###Bootstrapped Standard Errors
+
+
+```{r}
+
+resid_resamp<-replicate(5000,{
+    new_resids<-sample(resids,replace=TRUE) #resample resids w/ replacement
+    aSAH$new_y<-fitvals+new_resids #add new resids to yhats to get new "data"
+    newfit<-lm(new_y~gender+s100b_c,data=aSAH) #refit model
+    coef(newfit) #save coefficient estimates (b0, b1, etc)
+}) 
+
+resid_resamp%>%t%>%as.data.frame%>%summarize_all(sd)
+
+```
+*The standard error for Male is not changed very much, however the for s100b, it changes from .6233 to .52177.*
+
+### Logistic Regression Model
+
+```{r}
+glmdat<-aSAH%>%mutate(y=ifelse(outcome=="Poor",1,0))
+head(glmdat)
+
+glmfit<-glm(y~ndka_c+ s100b_c, data=glmdat, family="binomial"(link="logit"))
+coeftest(glmfit)
+exp(coef(glmfit))
+
+```
+*Every one-unit increase in ndka multiplies odds of a poor outcome by 1.03. For every one-unit increase in s100b, odds of a poor outcome increase by 207.278.* 
+
+```{r}
+glmdat$prob <- predict(glmfit,type="response")
+
+glmdat$predicted <- ifelse(glmdat$prob>.5,"Poor","Good")
+
+table(truth=glmdat$outcome, prediction=glmdat$predicted)%>%addmargins
+```
+```{r}
+#Accuracy
+(63+19)/113
+#Sensitivity/TPR
+63/72
+#Specificity
+19/41
+#Precision
+63/85
+library(plotROC)
+ROCplot<-ggplot(glmdat)+geom_roc(aes(d=y,m=prob), n.cuts=0) 
+calc_auc(ROCplot)
+
+ggplot(glmdat,aes(s100b_c,y))+geom_point(aes(color=predicted))+
+geom_smooth(method="glm",method.args=list(family="binomial"),se=F)
+```
+*The accuracy is equal to .7256, meaning that .73 is the proportion of correclty classified outcomes. The sensitivity is .875, which is the proportion of good outcomes that were correctly classified. The Specificity is .4634, which is th proportion of poor outcomes correctly classified. Precision is .7411 which is the proportion classified as good that actually are. The AUC is .78, which is not too bad, but could be better.*
+
+Density Plot
+```{r}
+glmdat$logit<-predict(glmfit)
+glmdat %>% mutate(outcome=factor(outcome,levels=c("Good","Poor"))) %>% ggplot(aes(logit, fill=outcome))+geom_density(alpha=.3)+
+  geom_vline(xintercept=0,lty=4)
+
+```
+
+ROC Plot
+```{r}
+ROCplot
+```
+
+### Logistic Regression 2
+
+Here, I did not use all variables because gos6 and wfns are basically the same as outcome.
+
+```{r}
+
+glmfit2<-glm(y~ndka_c + s100b_c+ gender+age_c, data=glmdat, family="binomial"(link="logit"))
+coeftest(glmfit2)
+exp(coef(glmfit2))
+```
+
+```{r}
+glmdat$prob2 <- predict(glmfit2,type="response")
+
+glmdat$predicted2 <- ifelse(glmdat$prob2>.5,"Poor","Good")
+
+table(truth=glmdat$outcome, prediction=glmdat$predicted2)%>%addmargins
+```
+```{r}
+#Accuracy
+(63+22)/113
+#Sensitivity/TPR
+63/72
+#Specificity
+22/41
+#Precision
+63/82
+library(plotROC)
+ROCplot2<-ggplot(glmdat)+geom_roc(aes(d=y,m=prob2), n.cuts=0) 
+calc_auc(ROCplot2)
+
+```
+*The accuracy is equal to .7522, meaning that .75 is the proportion of correctly classified outcomes. The sensitivity is .875, which is the proportion of good outcomes that were correctly classified. The Specificity is .5365, which is the proportion of poor outcomes correctly classified. Precision is .7683 which is the proportion classified as good that actually are. The AUC is .801, which is slightly better than the last one.*
+```{r}
+class_diag <- function(probs,truth){
+  #CONFUSION MATRIX: CALCULATE ACCURACY, TPR, TNR, PPV
+  tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+  acc=sum(diag(tab))/sum(tab)
+  sens=tab[2,2]/colSums(tab)[2]
+  spec=tab[1,1]/colSums(tab)[1]
+  ppv=tab[2,2]/rowSums(tab)[2]
+  f1=2*(sens*ppv)/(sens+ppv)
+
+  if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE) truth<-as.numeric(truth)-1
+  
+  #CALCULATE EXACT AUC
+  ord<-order(probs, decreasing=TRUE)
+  probs <- probs[ord]; truth <- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth)) 
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+  TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+  n <- length(TPR)
+  auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+
+  data.frame(acc,sens,spec,ppv,f1,auc)
+}
+
+
+set.seed(1234)
+k=10 
+data<-glmdat[sample(nrow(glmdat)),] 
+folds<-cut(seq(1:nrow(glmdat)),breaks=k,labels=F) 
+diags<-NULL
+for(i in 1:k){
+train<-data[folds!=i,]
+test<-data[folds==i,]
+truth<-test$y
+fit6<-glm(y~ndka_c + s100b_c+ gender+age_c, data=glmdat,family="binomial")
+probs<-predict(fit6,newdata = test,type="response")
+diags<-rbind(diags,class_diag(probs,truth))
+}
+summarize_all(diags,mean)
+```
+
+*The AUC has gone down a tiny bit, but it is still similar*
+Lasso
+
+```{r}
+library(glmnet)
+y<-as.matrix(glmdat$y) #grab response
+x<-model.matrix(y~ndka_c + s100b_c+ gender+age_c,data=glmdat)[,-1] 
+head(x)
+x<-scale(x)
+
+cv<-cv.glmnet(x,y,family="binomial")
+lasso<-glmnet(x,y,family="binomial",lambda=cv$lambda.1se)
+coef(lasso)
+```
+*only the variable s100b is retained, but this makes sense because we have seen it having the highest effect on odds and on slope in the past few models*
+
+```{r}
+set.seed(1234)
+k=10
+data7 <- glmdat %>% sample_frac #put rows of dataset in random order
+folds <- ntile(1:nrow(glmdat),n=10) #create fold labels
+diags<-NULL
+for(i in 1:k){
+train <- data7[folds!=i,] #create training set (all but fold i)
+test <- data7[folds==i,] #create test set (just fold i)
+truth <- test$y #save truth labels from fold i
+fit7 <- glm(y~s100b_c,
+data=train, family="binomial")
+probs <- predict(fit7, newdata=test, type="response")
+diags<-rbind(diags,class_diag(probs,truth))
+}
+diags%>%summarize_all(mean)
+```
+*The AUC has gone down a little, but not a ton.*
