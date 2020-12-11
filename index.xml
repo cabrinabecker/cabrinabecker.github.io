@@ -8,13 +8,13 @@
     <language>en-US</language>
     <lastBuildDate>Thu, 10 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>New Language</title>
+      <title>Richa = Da Homie</title>
       <link>/post/2020/12/10/new-language/</link>
       <pubDate>Thu, 10 Dec 2020 00:00:00 +0000</pubDate>
       
       <guid>/post/2020/12/10/new-language/</guid>
       <description>This is me and one of my best friends, Richa, who is also in this class, and we are working on the project together. I&#39;m going to use her in my example of how to use Python, since we learned it together.
- We learned assign values in values to variables, and then use those to run functions, such as multiplication.
+  We learned assign values in values to variables, and then use those to run functions, such as multiplication and division.
 trois = 3.0 cinq = 5 print(cinq*trois) ## 15.</description>
     </item>
     

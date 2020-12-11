@@ -1,5 +1,5 @@
 ---
-title: New Language
+title: Richa = Da Homie
 author: Cabrina Becker
 date: '2020-12-10'
 slug: new-language
@@ -7,10 +7,15 @@ categories: []
 tags: []
 description: ''
 ---
-
+<center>
 ![This is me and one of my best friends, Richa, who is also in this class, and we are working on the project together. I'm going to use her in my example of how to use Python, since we learned it together.](/post/2020-12-10-new-language_files/smallroach.jpg)
 
-We learned assign values in values to variables, and then use those to run functions, such as multiplication.
+</center>
+
+
+
+
+We learned assign values in values to variables, and then use those to run functions, such as multiplication and division.
 
 ```{python}
 trois = 3.0
